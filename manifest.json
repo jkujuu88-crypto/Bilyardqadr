@@ -1,0 +1,17 @@
+{
+  "name": "Бильярд QADR",
+  "short_name": "QADR",
+  "description": "Таймер бильярдных столов: время, сумма в сомони, общий счёт и история.",
+  "lang": "ru",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0d140f",
+  "theme_color": "#1f7a4d",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
