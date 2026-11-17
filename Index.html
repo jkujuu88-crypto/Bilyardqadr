@@ -1,0 +1,353 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#1f7a4d">
+<title>Бильярд QADR</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<style>
+:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+body{margin:0}
+[hidden]{display:none!important}
+</style>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;700&display=swap">
+<style>
+:root {
+  --bg: #f0f4f1;
+  --surface: #ffffff;
+  --fg: #16211a;
+  --muted: #58675d;
+  --line: #d6dfd8;
+  --felt: #1f7a4d;
+  --felt-fg: #ffffff;
+  --felt-soft: #e3f2e9;
+  --stop: #b3372c;
+  --stop-fg: #ffffff;
+  --font-display: 'Space Grotesk', system-ui, sans-serif;
+  --font-body: 'Inter', system-ui, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0d140f;
+    --surface: #151f18;
+    --fg: #e8efe9;
+    --muted: #94a59a;
+    --line: #25332a;
+    --felt: #3fb97b;
+    --felt-fg: #06130c;
+    --felt-soft: #173325;
+    --stop: #e5675b;
+    --stop-fg: #1a0705;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0d140f;
+  --surface: #151f18;
+  --fg: #e8efe9;
+  --muted: #94a59a;
+  --line: #25332a;
+  --felt: #3fb97b;
+  --felt-fg: #06130c;
+  --felt-soft: #173325;
+  --stop: #e5675b;
+  --stop-fg: #1a0705;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+body {
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-body);
+  font-size: 17px;
+  line-height: 1.4;
+  padding-block: 20px 120px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+.wrap { max-width: 960px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px; }
+
+header { display: flex; flex-direction: column; gap: 14px; }
+h1 { font-family: var(--font-display); font-size: 1.875rem; line-height: 1.1; margin: 0; }
+.brand { color: var(--felt); letter-spacing: 0.04em; }
+.totals { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.stat { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 12px 14px; min-width: 0; }
+.stat-label { font-size: 0.8125rem; color: var(--muted); }
+.stat-value { font-family: var(--font-display); font-size: 1.625rem; font-weight: 700; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.stat.big { background: var(--felt); border-color: var(--felt); }
+.stat.big .stat-label, .stat.big .stat-value { color: var(--felt-fg); }
+
+.screen-head { display: flex; flex-direction: column; gap: 4px; }
+.screen-head h2 { font-family: var(--font-display); font-size: 1.375rem; margin: 0; }
+.hint { margin: 0; color: var(--muted); font-size: 0.9375rem; }
+.status { margin: 0; font-weight: 600; font-size: 0.9375rem; }
+
+.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 16px; }
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-width: 0;
+}
+.card.running { border-color: var(--felt); background: linear-gradient(var(--felt-soft), var(--felt-soft)), var(--surface); }
+
+.card-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.card-head h3 { font-family: var(--font-display); font-size: 1.375rem; margin: 0; }
+.pill {
+  font-size: 0.8125rem; font-weight: 600; letter-spacing: 0.03em;
+  padding: 4px 12px; border-radius: 999px;
+  border: 1px solid var(--line); color: var(--muted);
+}
+.running .pill { background: var(--felt); border-color: var(--felt); color: var(--felt-fg); }
+
+.time {
+  font-family: var(--font-display); font-weight: 700; font-size: 2.875rem; line-height: 1;
+  font-variant-numeric: tabular-nums; letter-spacing: -0.01em;
+}
+.cost-row { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; border-top: 1px solid var(--line); padding-top: 12px; }
+.cost-label { font-size: 0.875rem; color: var(--muted); }
+.cost { font-family: var(--font-display); font-weight: 700; font-size: 1.875rem; font-variant-numeric: tabular-nums; }
+.cost small { font-size: 1rem; font-weight: 500; color: var(--muted); }
+
+button { font: inherit; cursor: pointer; }
+button.toggle {
+  display: flex; align-items: center; justify-content: center; gap: 10px;
+  font-weight: 700; font-size: 1.25rem;
+  min-height: 60px; border: 0; border-radius: 12px;
+  background: var(--felt); color: var(--felt-fg);
+}
+button.toggle svg { width: 20px; height: 20px; fill: currentColor; flex: none; }
+.running button.toggle { background: var(--stop); color: var(--stop-fg); }
+button.toggle:active { transform: scale(0.98); }
+button:focus-visible { outline: 3px solid var(--fg); outline-offset: 2px; }
+@media (prefers-reduced-motion: reduce) { button.toggle:active { transform: none; } }
+
+.tabbar {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 5;
+  background: var(--surface); border-top: 1px solid var(--line);
+  padding-top: 8px;
+  padding-bottom: calc(8px + env(safe-area-inset-bottom, 0px));
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+.tabbar-inner { max-width: 960px; margin: 0 auto; display: flex; gap: 8px; }
+.tab {
+  flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
+  min-height: 60px; border: 0; border-radius: 12px; background: transparent; color: var(--muted);
+  font-weight: 600; font-size: 0.9375rem; position: relative;
+}
+.tab svg { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.tab[aria-current="page"] { background: var(--felt-soft); color: var(--felt); }
+.badge {
+  position: absolute; top: 4px; left: calc(50% + 10px);
+  min-width: 22px; height: 22px; padding: 0 6px; border-radius: 999px;
+  background: var(--stop); color: var(--stop-fg);
+  font-size: 0.8125rem; line-height: 22px; text-align: center; font-variant-numeric: tabular-nums;
+}
+
+.by-table { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; }
+.by-table .stat { padding: 10px 12px; }
+.by-table .stat-value { font-size: 1.25rem; }
+
+.history-tools { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
+.history-tools span { font-size: 0.9375rem; color: var(--muted); }
+button.small {
+  font-size: 0.9375rem; font-weight: 600; min-height: 44px; padding: 0 16px;
+  border-radius: 10px; border: 1px solid var(--line); background: var(--surface); color: var(--fg);
+}
+button.small.danger { background: var(--stop); border-color: var(--stop); color: var(--stop-fg); }
+
+.history-list { display: flex; flex-direction: column; gap: 12px; }
+.day-group { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; overflow: hidden; }
+.day-title {
+  display: flex; justify-content: space-between; align-items: baseline; gap: 12px;
+  padding: 12px 16px; border-bottom: 1px solid var(--line); font-weight: 600;
+}
+.day-title .sum { font-family: var(--font-display); font-variant-numeric: tabular-nums; }
+.rows { list-style: none; margin: 0; padding: 0; }
+.rows li {
+  display: flex; justify-content: space-between; align-items: center; gap: 12px;
+  padding: 12px 16px; border-bottom: 1px solid var(--line);
+}
+.rows li:last-child { border-bottom: 0; }
+.row-main { min-width: 0; }
+.row-table { font-weight: 600; }
+.row-sub { color: var(--muted); font-size: 0.9375rem; font-variant-numeric: tabular-nums; }
+.row-cost { font-family: var(--font-display); font-weight: 700; font-size: 1.125rem; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.empty { color: var(--muted); padding: 16px; border: 1px dashed var(--line); border-radius: 14px; margin: 0; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Бильярд <span class="brand">QADR</span></h1>
+    <div class="totals">
+      <div class="stat">
+        <div class="stat-label">За сегодня</div>
+        <div class="stat-value" id="day-total">0.00 смн</div>
+      </div>
+      <div class="stat big">
+        <div class="stat-label">Общий счёт</div>
+        <div class="stat-value" id="all-total">0.00 смн</div>
+      </div>
+    </div>
+  </header>
+
+  <section id="screen-tables" aria-labelledby="tables-title">
+    <div class="wrap">
+      <div class="screen-head">
+        <h2 id="tables-title">Столы</h2>
+        <p class="hint">Нажми «Старт», когда начали играть. Нажми «Стоп», когда закончили: сумма сохранится в истории. Цена: 1 минута = 0.5 смн.</p>
+        <p class="status" id="status"></p>
+      </div>
+      <div class="grid" id="grid"></div>
+    </div>
+  </section>
+
+  <section id="screen-history" aria-labelledby="history-title" hidden>
+    <div class="wrap">
+      <div class="screen-head">
+        <h2 id="history-title">История игр</h2>
+        <p class="hint">Все законченные игры по дням. Новые сверху.</p>
+      </div>
+      <div class="by-table" id="by-table"></div>
+      <div class="history-tools" id="clear-box"></div>
+      <div class="history-list" id="history-list"></div>
+    </div>
+  </section>
+</div>
+
+<nav class="tabbar" aria-label="Главное меню">
+  <div class="tabbar-inner">
+    <button type="button" class="tab" id="tab-tables" aria-current="page">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
+      <span>Столы</span>
+      <span class="badge" id="badge" hidden>0</span>
+    </button>
+    <button type="button" class="tab" id="tab-history">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+      <span>История</span>
+    </button>
+  </div>
+</nav>
+
+<script>
+(function () {
+  var RATE = 0.5; // сомони за 1 минуту
+  var KEY = 'billiard-timer-v1';
+  var COUNT = 4;
+  var MAX_HISTORY = 2000;
+
+  var PLAY = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4.5v15l13-7.5z"/></svg>';
+  var STOP = '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="5" width="14" height="14" rx="2"/></svg>';
+
+  var state = { tables: [], history: [] };
+  for (var i = 0; i < COUNT; i++) state.tables.push({ start: null, sec: 0 });
+
+  try {
+    var saved = JSON.parse(localStorage.getItem(KEY) || 'null');
+    if (saved && saved.tables && saved.tables.length === COUNT) {
+      state.tables = saved.tables;
+      state.history = Array.isArray(saved.history) ? saved.history : [];
+    }
+  } catch (e) {}
+
+  function save() {
+    try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {}
+  }
+
+  function pad(n) { return (n < 10 ? '0' : '') + n; }
+  function fmtTime(sec) {
+    var h = Math.floor(sec / 3600), m = Math.floor((sec % 3600) / 60), s = sec % 60;
+    return pad(h) + ':' + pad(m) + ':' + pad(s);
+  }
+  function costOf(sec) { return sec / 60 * RATE; }
+  function money(v) { return v.toFixed(2); }
+  function hhmm(ts) { var d = new Date(ts); return pad(d.getHours()) + ':' + pad(d.getMinutes()); }
+  function dayKey(ts) { var d = new Date(ts); return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); }
+  function dayLabel(ts) {
+    if (dayKey(ts) === dayKey(Date.now())) return 'Сегодня';
+    return new Date(ts).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' });
+  }
+
+  function $(id) { return document.getElementById(id); }
+  var grid = $('grid');
+  var statusEl = $('status');
+  var badge = $('badge');
+  var dayTotalEl = $('day-total');
+  var allTotalEl = $('all-total');
+  var byTableEl = $('by-table');
+  var listEl = $('history-list');
+  var clearBox = $('clear-box');
+  var cards = [];
+
+  state.tables.forEach(function (t, idx) {
+    var card = document.createElement('section');
+    card.className = 'card';
+    card.innerHTML =
+      '<div class="card-head"><h3>Стол ' + (idx + 1) + '</h3><span class="pill"></span></div>' +
+      '<div class="time">00:00:00</div>' +
+      '<div class="cost-row"><span class="cost-label"></span><span class="cost">0.00 <small>смн</small></span></div>' +
+      '<button type="button" class="toggle" id="toggle-' + (idx + 1) + '"></button>';
+    grid.appendChild(card);
+    var refs = {
+      card: card,
+      pill: card.querySelector('.pill'),
+      time: card.querySelector('.time'),
+      label: card.querySelector('.cost-label'),
+      cost: card.querySelector('.cost'),
+      btn: card.querySelector('button')
+    };
+    refs.btn.addEventListener('click', function () { toggle(idx); });
+    cards.push(refs);
+  });
+
+  function elapsed(t) {
+    return t.start ? Math.max(0, Math.floor((Date.now() - t.start) / 1000)) : t.sec;
+  }
+
+  function renderTables() {
+    var running = 0;
+    state.tables.forEach(function (t, idx) {
+      var r = cards[idx];
+      var sec = elapsed(t);
+      var on = !!t.start;
+      if (on) running++;
+      r.card.classList.toggle('running', on);
+      r.pill.textContent = on ? 'Идёт игра' : 'Свободен';
+      r.time.textContent = fmtTime(sec);
+      r.label.textContent = on ? 'Сейчас к оплате' : (sec > 0 ? 'Итого к оплате' : 'К оплате');
+      r.cost.innerHTML = money(costOf(sec)) + ' <small>смн</small>';
+      var want = on ? 'stop' : 'start';
+      if (r.btn.getAttribute('data-mode') !== want) {
+        r.btn.setAttribute('data-mode', want);
+        r.btn.innerHTML = (on ? STOP : PLAY) + '<span>' + (on ? 'Стоп' : 'Старт') + '</span>';
+      }
+    });
+    statusEl.textContent = 'Идёт игра: ' + running + ' из ' + COUNT + ' столов';
+    badge.hidden = running === 0;
+    badge.textContent = running;
+  }
+
+  function renderHistory() {
+    var h = state.history;
+    var today = dayKey(Date.now());
+    var all = 0, day = 0;
+    var per = [];
+    for (var i = 0; i < COUNT; i++) per.push(0);
+    h.forEach(function (e) {
+      all += e.cost;
+      if (dayKey(e.end) === today) day += e.cost;
+      if (e.table >= 1 && e.table <= COUNT) per[e.table - 1] += e.cost;
+    });
+    allTotalEl.textContent = money(all) + ' смн';
+    dayTotalEl.textContent = m
