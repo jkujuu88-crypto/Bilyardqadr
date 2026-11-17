@@ -15,6 +15,7 @@ body{margin:0}
 </style>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;700&display=swap">
 <style>
+/* Layout: header with name and two totals, one screen at a time (Столы or История), fixed bottom tab bar to switch */
 :root {
   --bg: #f0f4f1;
   --surface: #ffffff;
@@ -350,4 +351,176 @@ button.small.danger { background: var(--stop); border-color: var(--stop); color:
       if (e.table >= 1 && e.table <= COUNT) per[e.table - 1] += e.cost;
     });
     allTotalEl.textContent = money(all) + ' смн';
-    dayTotalEl.textContent = m
+    dayTotalEl.textContent = money(day) + ' смн';
+
+    byTableEl.innerHTML = '';
+    per.forEach(function (v, i) {
+      var s = document.createElement('div');
+      s.className = 'stat';
+      var l = document.createElement('div');
+      l.className = 'stat-label';
+      l.textContent = 'Стол ' + (i + 1) + ', всего';
+      var n = document.createElement('div');
+      n.className = 'stat-value';
+      n.textContent = money(v) + ' смн';
+      s.appendChild(l);
+      s.appendChild(n);
+      byTableEl.appendChild(s);
+    });
+
+    listEl.innerHTML = '';
+    if (!h.length) {
+      var p = document.createElement('p');
+      p.className = 'empty';
+      p.textContent = 'Пока пусто. Когда остановишь стол, игра появится здесь.';
+      listEl.appendChild(p);
+      renderClear(false);
+      return;
+    }
+
+    var groups = [];
+    var map = {};
+    h.forEach(function (e) {
+      var k = dayKey(e.end);
+      if (!map[k]) { map[k] = { ts: e.end, sum: 0, items: [] }; groups.push(map[k]); }
+      map[k].sum += e.cost;
+      map[k].items.push(e);
+    });
+
+    var frag = document.createDocumentFragment();
+    groups.forEach(function (g) {
+      var box = document.createElement('div');
+      box.className = 'day-group';
+      var title = document.createElement('div');
+      title.className = 'day-title';
+      var tl = document.createElement('span');
+      tl.textContent = dayLabel(g.ts);
+      var ts = document.createElement('span');
+      ts.className = 'sum';
+      ts.textContent = money(g.sum) + ' смн';
+      title.appendChild(tl);
+      title.appendChild(ts);
+      box.appendChild(title);
+      var ul = document.createElement('ul');
+      ul.className = 'rows';
+      g.items.forEach(function (e) {
+        var li = document.createElement('li');
+        var main = document.createElement('div');
+        main.className = 'row-main';
+        var a = document.createElement('div');
+        a.className = 'row-table';
+        a.textContent = 'Стол ' + e.table;
+        var b = document.createElement('div');
+        b.className = 'row-sub';
+        b.textContent = hhmm(e.start) + '–' + hhmm(e.end) + ' · ' + fmtTime(e.sec);
+        main.appendChild(a);
+        main.appendChild(b);
+        var c = document.createElement('div');
+        c.className = 'row-cost';
+        c.textContent = money(e.cost) + ' смн';
+        li.appendChild(main);
+        li.appendChild(c);
+        ul.appendChild(li);
+      });
+      box.appendChild(ul);
+      frag.appendChild(box);
+    });
+    listEl.appendChild(frag);
+    renderClear(false);
+  }
+
+  function renderClear(asking) {
+    clearBox.innerHTML = '';
+    if (!state.history.length) return;
+    if (!asking) {
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'small';
+      b.id = 'clear-history';
+      b.textContent = 'Очистить историю';
+      b.addEventListener('click', function () { renderClear(true); });
+      clearBox.appendChild(b);
+      return;
+    }
+    var msg = document.createElement('span');
+    msg.textContent = 'Удалить всю историю и общий счёт?';
+    var yes = document.createElement('button');
+    yes.type = 'button';
+    yes.className = 'small danger';
+    yes.id = 'clear-yes';
+    yes.textContent = 'Да, удалить';
+    yes.addEventListener('click', function () {
+      state.history = [];
+      save();
+      renderHistory();
+    });
+    var no = document.createElement('button');
+    no.type = 'button';
+    no.className = 'small';
+    no.id = 'clear-no';
+    no.textContent = 'Отмена';
+    no.addEventListener('click', function () { renderClear(false); });
+    clearBox.appendChild(msg);
+    clearBox.appendChild(yes);
+    clearBox.appendChild(no);
+  }
+
+  function toggle(idx) {
+    var t = state.tables[idx];
+    if (t.start) {
+      var now = Date.now();
+      var sec = elapsed(t);
+      state.history.unshift({ table: idx + 1, start: t.start, end: now, sec: sec, cost: costOf(sec) });
+      if (state.history.length > MAX_HISTORY) state.history.length = MAX_HISTORY;
+      t.sec = sec;
+      t.start = null;
+      save();
+      renderTables();
+      renderHistory();
+    } else {
+      t.start = Date.now();
+      t.sec = 0;
+      save();
+      renderTables();
+    }
+  }
+
+  var screens = { tables: $('screen-tables'), history: $('screen-history') };
+  var tabs = { tables: $('tab-tables'), history: $('tab-history') };
+
+  function show(name) {
+    if (!screens[name]) name = 'tables';
+    Object.keys(screens).forEach(function (k) {
+      screens[k].hidden = k !== name;
+      if (k === name) tabs[k].setAttribute('aria-current', 'page');
+      else tabs[k].removeAttribute('aria-current');
+    });
+    if (name === 'history') renderClear(false);
+  }
+
+  Object.keys(tabs).forEach(function (k) {
+    tabs[k].addEventListener('click', function () {
+      show(k);
+      try { if (location.hash !== '#' + k) location.hash = k; } catch (e) {}
+      window.scrollTo(0, 0);
+    });
+  });
+  window.addEventListener('hashchange', function () { show(location.hash.replace('#', '')); });
+
+  renderTables();
+  renderHistory();
+  show(location.hash.replace('#', ''));
+  setInterval(renderTables, 1000);
+  document.addEventListener('visibilitychange', function () { renderTables(); renderHistory(); });
+})();
+</script>
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', function () {
+    navigator.serviceWorker.register('sw.js').catch(function () {});
+  });
+}
+</script>
+</body>
+  </html>
+  
