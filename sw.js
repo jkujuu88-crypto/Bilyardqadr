@@ -1,9 +1,13 @@
-// Кэширует приложение, чтобы оно открывалось без интернета.
-var CACHE = 'qadr-billiard-v1';
-var ASSETS = ['./', './index.html', './manifest.json', './icon-192.png', './icon-512.png'];
+// Сначала берёт свежие файлы из интернета, а без интернета открывает сохранённые.
+var CACHE = 'qadr-billiard-v3';
+var ASSETS = ['./', './index.html', './style.css', './core.js', './debts.js', './manifest.json', './icon-192.png', './icon-512.png'];
 
 self.addEventListener('install', function (e) {
-  e.waitUntil(caches.open(CACHE).then(function (c) { return c.addAll(ASSETS); }));
+  e.waitUntil(
+    caches.open(CACHE).then(function (c) {
+      return Promise.all(ASSETS.map(function (a) { return c.add(a).catch(function () {}); }));
+    })
+  );
   self.skipWaiting();
 });
 
@@ -20,17 +24,16 @@ self.addEventListener('activate', function (e) {
 self.addEventListener('fetch', function (e) {
   if (e.request.method !== 'GET') return;
   e.respondWith(
-    caches.match(e.request).then(function (cached) {
-      if (cached) return cached;
-      return fetch(e.request)
-        .then(function (res) {
-          if (new URL(e.request.url).origin === self.location.origin && res.ok) {
-            var copy = res.clone();
-            caches.open(CACHE).then(function (c) { c.put(e.request, copy); });
-          }
-          return res;
-        })
-        .catch(function () { return caches.match('./index.html'); });
-    })
+    fetch(e.request)
+      .then(function (res) {
+        if (new URL(e.request.url).origin === self.location.origin && res.ok) {
+          var copy = res.clone();
+          caches.open(CACHE).then(function (c) { c.put(e.request, copy); });
+        }
+        return res;
+      })
+      .catch(function () {
+        return caches.match(e.request).then(function (r) { return r || caches.match('./index.html'); });
+      })
   );
 });
